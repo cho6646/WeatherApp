@@ -15,6 +15,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -45,7 +46,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,7 +53,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     public static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1000;
     public static final int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1001;
-    public static final int MY_PERMISSIONS_REQUEST_ACCESS_INTERNET = 1002;
+//    public static final int MY_PERMISSIONS_REQUEST_ACCESS_INTERNET = 1002;
 
     DrawerLayout drawerLayout;
 
@@ -171,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         textViewCity = findViewById(R.id.city_name);
         textViewDescription = findViewById(R.id.weather_description);
         gpsImageView = findViewById(R.id.gps_image);
+
         isGPS = new MutableLiveData<>();
         isGPS.setValue(true);
         isGPS.observe(this, new Observer<Boolean>() {
@@ -180,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                 else gpsImageView.setVisibility(View.VISIBLE);
             }
         });
+
         addedCity = new MutableLiveData<>();
 
         addedCity.observe(this, new Observer<String>() {
@@ -298,7 +300,6 @@ public class MainActivity extends AppCompatActivity {
     {
         String api = getString(R.string.openweather_api);
         Log.d("currentCity", city);
-//        String url = String.format("https://api.openweathermap.org/data/2.5/weather?lat=%.2f&lon=%.2f&lang=kr&units=metric&appid=%s",currentLat,currentLng,api);
         String url = String.format("https://api.openweathermap.org/data/2.5/weather?q=%s&lang=kr&units=metric&appid=%s",city,api);
         Log.d("url", url);
 
@@ -312,32 +313,16 @@ public class MainActivity extends AppCompatActivity {
                             JSONObject responseInJSONObject = new JSONObject(response);
                             Log.d("response",responseInJSONObject.toString());
                             JSONObject weather = responseInJSONObject.getJSONArray("weather").getJSONObject(0);
-                            String mainWeather = weather.getString("main");
-                            String descriptionWeather = weather.getString("description");
                             String icon = weather.getString("icon");
                             JSONObject main = responseInJSONObject.getJSONObject("main");
-                            double temp = main.getDouble("temp");
-                            double feelsLike = main.getDouble("feels_like");
-                            String minTemp = main.getString("temp_min");
-                            String maxTemp = main.getString("temp_max");
-                            int pressure = main.getInt("pressure");
-                            String humidity = main.getString("humidity");
-                            int visibility = responseInJSONObject.getInt("visibility");
-                            JSONObject wind = responseInJSONObject.getJSONObject("wind");
-                            double windSpeed = wind.getDouble("speed");
-                            int windDirection = wind.getInt("deg");
-                            String name = responseInJSONObject.getString("name");
-                            JSONObject time = responseInJSONObject.getJSONObject("sys");
-                            int sunrise = time.getInt("sunrise");
-                            int sunset = time.getInt("sunset");
                             setWeatherImage(icon);
-                            textViewTemp.setText((String.format("%.1f",temp)) +'\u2103');
-                            textViewMaxTemp.setText((maxTemp) +'\u2103');
-                            textViewMinTemp.setText((minTemp) +'\u2103');
-                            textViewFeelsLikeTemp.setText(String.format("%.1f",feelsLike)+'\u2103');
-                            textViewHumidity.setText(humidity+'%');
-                            textViewWind.setText((String.format("%.1f",windSpeed)));
-                            textViewDescription.setText(descriptionWeather);
+                            textViewTemp.setText((String.format("%.1f",main.getDouble("temp"))) +'\u2103');
+                            textViewMaxTemp.setText((main.getString("temp_max")) +'\u2103');
+                            textViewMinTemp.setText((main.getString("temp_min")) +'\u2103');
+                            textViewFeelsLikeTemp.setText(String.format("%.1f",main.getDouble("feels_like"))+'\u2103');
+                            textViewHumidity.setText(main.getString("humidity")+'%');
+                            textViewWind.setText((String.format("%.1f",responseInJSONObject.getJSONObject("wind").getDouble("speed"))));
+                            textViewDescription.setText(weather.getString("description"));
 
                         }
                         catch(JSONException e)
@@ -402,30 +387,31 @@ public class MainActivity extends AppCompatActivity {
     public void setWeatherImage(String icon)
     {
         ImageView weather = findViewById(R.id.weather_image);
+        int drawableId = 0;
         if(icon.equals("01d"))
         {
-            weather.setBackground(getResources().getDrawable(R.drawable.sunny_icon_background));
+            drawableId = R.drawable.sunny_icon_background;
             ViewCompat.setBackgroundTintList(weather, getResources().getColorStateList(R.color.holo_orange_light));
         }
-        else if(icon.equals("01n"))
-        {
-            weather.setBackground(getResources().getDrawable(R.drawable.sunny_night_icon_background));
-        }
-        else if(icon.startsWith("02"))
-        {
-            weather.setBackground(getResources().getDrawable(R.drawable.sun_cloud_icon_background));
-        }
-        else if(icon.startsWith("03")) weather.setBackground(getResources().getDrawable(R.drawable.cloudy_icon_background));
-        else if(icon.startsWith("04")) weather.setBackground(getResources().getDrawable(R.drawable.cloudy_icon_background));
-        else if(icon.startsWith("09")) weather.setBackground(getResources().getDrawable(R.drawable.shower_icon_background));
-        else if(icon.startsWith("10")) weather.setBackground(getResources().getDrawable(R.drawable.rainy_icon_background));
+        else if(icon.equals("01n")) drawableId = R.drawable.sunny_night_icon_background;
+        else if(icon.startsWith("02")) drawableId = R.drawable.sun_cloud_icon_background;
+        else if(icon.startsWith("03")) drawableId = R.drawable.cloudy_icon_background;
+        else if(icon.startsWith("04")) drawableId = R.drawable.cloudy_icon_background;
+        else if(icon.startsWith("09")) drawableId = R.drawable.shower_icon_background;
+        else if(icon.startsWith("10")) drawableId = R.drawable.rainy_icon_background;
         else if(icon.startsWith("11"))
         {
-            weather.setBackground(getResources().getDrawable(R.drawable.thunder_icon_background));
+            drawableId = R.drawable.thunder_icon_background;
             ViewCompat.setBackgroundTintList(weather, getResources().getColorStateList(R.color.holo_orange_light));
         }
-        else if(icon.startsWith("13")) weather.setBackground(getResources().getDrawable(R.drawable.snow_icon_background));
-        else if(icon.startsWith("50")) weather.setBackground(getResources().getDrawable(R.drawable.mist_icon_background));
+        else if(icon.startsWith("13")) drawableId = R.drawable.snow_icon_background;
+        else if(icon.startsWith("50")) drawableId = R.drawable.mist_icon_background;
+        setWeatherBackground(weather, drawableId);
+    }
+
+    private void setWeatherBackground(ImageView weather, int drawableId)
+    {
+        weather.setBackground(getResources().getDrawable(drawableId));
     }
 
     public void getCurrentLocation()
